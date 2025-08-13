@@ -1,3 +1,7 @@
+
+from google import genai
+from google.genai import types
+import google.generativeai
 import numpy as np
 def log_base(value,base):
     return np.log(value) / np.log(base)
@@ -42,3 +46,6 @@ def sanitize_user_input(raw_func: str) -> str:
     func = re.sub(r"\s+", "", func)
 
     return func
+
+
+    

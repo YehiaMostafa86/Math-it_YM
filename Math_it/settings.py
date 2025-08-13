@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -121,3 +122,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Media
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+# API_KEYS
+
+load_dotenv()  # this loads the .env file
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+WELFRAM_API_KEY = os.getenv('WELFRAM_API_KEY')
+LLAMA_API_KEY = os.getenv('LLAMA_API_KEY')
+STACKEXCHANGE_API_KEY = os.getenv('STACKEXCHANGE_API_KEY')

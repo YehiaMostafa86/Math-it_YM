@@ -88,9 +88,9 @@
             font-weight: 600;
         }
 
-        input[type="text"] {
+        input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 15px 20px;
+            padding: 15px 60px 15px 20px;
             font-size: 1rem;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
@@ -99,11 +99,59 @@
             background: #fff;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="file"]:focus {
             border-color: #667eea;
             outline: none;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             transform: translateY(-1px);
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .upload-icon {
+            position: absolute;
+            right: 15px;
+            top: 40%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+
+        .upload-icon:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .upload-icon.has-image {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .upload-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .hidden-file-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
         }
 
         button {
@@ -326,9 +374,20 @@
         <div class="left-panel">
             <div class="search-container">
                 <h2>Ask Your Math Question</h2>
-                <form id="mathForm">
-                    <input type="text" id="question" name="question" placeholder="Type your math question here..."
-                        required />
+                <form id="mathForm" method="POST" enctype="multipart/form-data">
+                    <div class="input-container">
+                        <input type="text" id="question" name="question" placeholder="Type your math question here..."
+                            required />
+                        <div class="upload-icon" id="uploadIcon" title="Upload math image">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                            </svg>
+                        </div>
+                        <input type="file" id="image" name="image" accept="image/*" class="hidden-file-input" />
+                    </div>
+                    
                     <button type="submit">Solve with AI</button>
                 </form>
 
@@ -394,73 +453,98 @@
                 .find(row => row.startsWith('csrftoken='))
                 ?.split('=')[1];
         }
-
+        
         function setQuestion(question) {
             document.getElementById("question").value = question;
         }
-
+        
         function setLoading(element, serviceName) {
             element.innerHTML = `<div class="loading">Solving with ${serviceName}...</div>`;
             element.className = 'answer-content';
         }
-
+        
         function setSuccess(element, content) {
             element.innerHTML = content;
             element.className = 'answer-content success';
         }
-
+        
         function setError(element, serviceName) {
             element.innerHTML = `Error with ${serviceName}`;
             element.className = 'answer-content error';
         }
-        // Function to update the graph
-        // Replace your updateGraph function with this better solution:
+        
+        // Handle upload icon click
+        document.getElementById('uploadIcon').addEventListener('click', function() {
+            document.getElementById('image').click();
+        });
+        
+        // Handle file selection
+        document.getElementById('image').addEventListener('change', function(e) {
+            const uploadIcon = document.getElementById('uploadIcon');
+            const file = e.target.files[0];
+            
+            if (file) {
+                uploadIcon.classList.add('has-image');
+                uploadIcon.title = `Image selected: ${file.name}`;
+                uploadIcon.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20,6 9,17 4,12"/>
+                    </svg>
+                `;
+            } else {
+                uploadIcon.classList.remove('has-image');
+                uploadIcon.title = 'Upload math image';
+                uploadIcon.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="9" cy="9" r="2"/>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                    </svg>
+                `;
+            }
+        });
+        
+        // Update graph
         async function updateGraph(question) {
             const headers = {
                 "Content-Type": "application/x-www-form-urlencoded",
                 "X-CSRFToken": getCSRFToken()
             };
             const body = new URLSearchParams({ question });
-
+        
             try {
                 const response = await fetch('/update_graph', {
                     method: "POST",
                     headers: headers,
                     body: body
                 });
-
+        
                 const data = await response.json();
-
+        
                 if (response.ok && data.plot) {
-                    // Create a temporary container to parse the HTML
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = data.plot;
-
-                    // Clear the existing graph
+        
                     const graphDiv = document.getElementById('graph');
                     graphDiv.innerHTML = '';
-
-                    // Move all content from temp div to graph div
+        
                     while (tempDiv.firstChild) {
                         graphDiv.appendChild(tempDiv.firstChild);
                     }
-
-                    // Execute any script tags
+        
                     const scripts = graphDiv.querySelectorAll('script');
                     scripts.forEach(script => {
                         const newScript = document.createElement('script');
                         newScript.type = script.type || 'text/javascript';
-
+        
                         if (script.src) {
                             newScript.src = script.src;
                             newScript.onload = () => {
-                                // Script loaded, now execute inline scripts
                                 executeInlineScripts();
                             };
                             document.head.appendChild(newScript);
                         } else if (script.textContent.trim()) {
                             try {
-                                // Execute inline script
                                 eval(script.textContent);
                             } catch (e) {
                                 console.error('Error executing script:', e);
@@ -472,7 +556,7 @@
                 console.error('Error updating graph:', error);
             }
         }
-
+        
         function executeInlineScripts() {
             const scripts = document.getElementById('graph').querySelectorAll('script');
             scripts.forEach(script => {
@@ -485,10 +569,14 @@
                 }
             });
         }
-        // Process all services concurrently (commented out since endpoints are disabled)
+        
+        // Main form submission handler
         document.getElementById("mathForm").addEventListener("submit", async function (event) {
             event.preventDefault();
+        
             const question = document.getElementById("question").value.trim();
+            const imageFile = document.getElementById("image").files[0];
+        
             const answerBoxes = [
                 { element: document.getElementById("answer1"), name: "Gemini", endpoint: "/send_gemeni" },
                 { element: document.getElementById("answer2"), name: "DeepSeek", endpoint: "/send_deepseek" },
@@ -497,61 +585,79 @@
                 { element: document.getElementById("answer5"), name: "Symbolab", endpoint: "/send_sympolab" },
                 { element: document.getElementById("answer6"), name: "StackExchange", endpoint: "/send_stackexchange" }
             ];
-
-            if (!question) {
+        
+            if (!question && !imageFile) {
                 answerBoxes.forEach(box => {
-                    box.element.innerHTML = "Please enter a math question.";
+                    box.element.innerHTML = "Please enter a math question or upload an image.";
                     box.element.className = 'answer-content error';
                 });
                 return;
             }
-
+        
             // Set all to loading state
             answerBoxes.forEach(box => setLoading(box.element, box.name));
-
+        
+            // ALWAYS send to image2latyx endpoint - regardless of whether there's an image or not
+            const formDataImage = new FormData();
+            formDataImage.append('question', question);
+            // Only append image if one exists
+            if (imageFile) {
+                formDataImage.append('image', imageFile);
+            }
+            
+            try {
+                const resImg = await fetch('/image2latyx', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    body: formDataImage
+                });
+                if (!resImg.ok) {
+                    console.warn('Image to LaTeX conversion request failed.');
+                }
+            } catch (err) {
+                console.error('Error sending to image2latyx:', err);
+            }
+        
+            // Update graph
             await updateGraph(question);
-
-            const headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRFToken": getCSRFToken()
-            };
-            const body = new URLSearchParams({ question });
-
-
+        
+            // Process all AI services
             const promises = answerBoxes.map(async (box) => {
                 try {
+                    const formData = new FormData();
+                    formData.append('question', question);
+                    if (imageFile) {
+                        formData.append('image', imageFile);
+                    }
+        
                     const response = await fetch(box.endpoint, {
                         method: "POST",
-                        headers: headers,
-                        body: body
+                        headers: { "X-CSRFToken": getCSRFToken() },
+                        body: formData
                     });
-
+        
                     const data = await response.json();
-
+        
                     if (!response.ok) {
                         throw new Error(`${box.name} error`);
                     }
-
+        
                     setSuccess(box.element, data.response || `No answer received from ${box.name}`);
-
-                    // Trigger MathJax rendering
+        
                     if (window.MathJax) {
                         setTimeout(() => MathJax.typesetPromise([box.element]), 100);
                     }
-
+        
                 } catch (error) {
                     console.error(`Error with ${box.name}:`, error);
                     setError(box.element, box.name);
                 }
             });
-
+        
             await Promise.allSettled(promises);
-
-
-            // Since the AI service endpoints are commented out, show a message
-
         });
     </script>
+        
 </body>
 
 </html>
