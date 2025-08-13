@@ -21,9 +21,7 @@ latyx_image = ''
 def image2latyx(request):
     response = None
     image = request.FILES.get('image')
-    print('yehiaaaaaaaaaaaaaaaaaaaaaaaaaaa')
     if image :
-        print('workedddddddddddddddddddddddddddddddddd')
         
         image_bytes = image.read()
         mimetype, _ = mimetypes.guess_type(image.name)
@@ -62,7 +60,6 @@ def image2latyx(request):
         latyx_image.write(response.text)
         latyx_image.close()
     else:
-        print('deletedddddddddddddddffff')
         latyx_image = open('image_latyx.txt','w')
         latyx_image.write('')
         latyx_image.close()
